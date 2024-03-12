@@ -5,7 +5,7 @@ using System.Linq;
 namespace GeneralUtils {
     public class Rng {
         private readonly System.Random _rnd;
-        public int Seed { get; }
+        public int? Seed { get; }
 
         public Rng(int? seed = null) {
             Seed = seed;
