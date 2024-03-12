@@ -1,0 +1,2 @@
+# GeneralUtilsGames
+Games utils
