@@ -22,7 +22,7 @@ namespace GeneralUtils.States {
             state.SetStateSwitcher(SwitchToState);
         }
 
-        public void Start() {
+        public void Start(IStateInfo defaultStateInfo = null) {
             if (!(_defaultState is { } defaultState)) {
                 throw new ArgumentNullException(nameof(_defaultState), "Default state not set");
             }
@@ -32,7 +32,7 @@ namespace GeneralUtils.States {
                     nameof(_defaultState));
             }
 
-            SwitchToState(defaultState, null);
+            SwitchToState(defaultState, defaultStateInfo);
         }
 
         public void Stop() {

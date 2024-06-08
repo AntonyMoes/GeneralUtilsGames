@@ -1,14 +1,18 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace GeneralUtils.States {
     public abstract class SubStateMachineWithInfo<TBaseStateEnum, TStateEnum, TStateInfo> : AbstractSubStateMachine<TBaseStateEnum, TStateEnum>
         where TBaseStateEnum : struct, Enum
         where TStateEnum : struct, Enum
         where TStateInfo : class, IStateInfo {
-        protected sealed override void OnStateEnterLogic(IStateInfo stateInfo = null) {
-            PerformStateEnter(stateInfo as TStateInfo);
+        protected sealed override IStateInfo OnStateEnterLogic(IStateInfo stateInfo = null) {
+            return PerformStateEnter(stateInfo as TStateInfo);
         }
 
-        protected virtual void PerformStateEnter(IStateInfo stateInfo = null) { }
+        [CanBeNull]
+        protected virtual IStateInfo PerformStateEnter(TStateInfo stateInfo = null) {
+            return null;
+        }
     }
 }

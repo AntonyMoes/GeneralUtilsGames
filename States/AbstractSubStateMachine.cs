@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace GeneralUtils.States {
     public abstract class AbstractSubStateMachine<TBaseStateEnum, TStateEnum> : StateMachine<TStateEnum>, IState<TBaseStateEnum>
@@ -11,11 +12,12 @@ namespace GeneralUtils.States {
         }
 
         public void OnStateEnter(IStateInfo stateInfo = null) {
-            OnStateEnterLogic(stateInfo);
-            Start();
+            var defaultStateInfo = OnStateEnterLogic(stateInfo);
+            Start(defaultStateInfo);
         }
 
-        protected abstract void OnStateEnterLogic(IStateInfo stateInfo = null);
+        [CanBeNull]
+        protected abstract IStateInfo OnStateEnterLogic(IStateInfo stateInfo = null);
 
         public void OnStateExit() {
             Stop();
