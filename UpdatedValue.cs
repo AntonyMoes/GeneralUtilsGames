@@ -11,6 +11,7 @@ namespace GeneralUtils {
         private readonly bool _setIfNotChanged;
 
         private T _value;
+
         public T Value {
             get => _value;
             set {
@@ -50,34 +51,39 @@ namespace GeneralUtils {
             _setIfNotChanged = setIfNotChanged;
         }
 
-        public void WaitForChange(Action onDone) {
+        public IDisposable WaitForChange(Action onDone) {
             // HACK
             var counter = 0;
+
             bool SecondTimePredicate(T value) {
                 return counter++ >= 1;
             }
 
-            WaitFor(SecondTimePredicate, onDone);
+            return WaitFor(SecondTimePredicate, onDone);
         }
 
-        public void WaitFor(T concreteValue, Action onDone) {
-            WaitFor(value => value.Equals(concreteValue), onDone);
+        public IDisposable WaitFor(T concreteValue, Action onDone) {
+            return WaitFor(value => value.Equals(concreteValue), onDone);
         }
 
-        public void WaitFor(Func<T, bool> predicate, Action onDone) {
+        public IDisposable WaitFor(Func<T, bool> predicate, Action onDone) {
             if (predicate(Value)) {
                 onDone?.Invoke();
+                return WaitToken.Empty;
             } else {
                 _waiters.Add(predicate, onDone);
+                return new WaitToken(() => _waiters.Remove(predicate));
             }
         }
 
-        public void Subscribe(Action<T> onChange, bool triggerInitialUpdate = false) {
+        public IDisposable Subscribe(Action<T> onChange, bool triggerInitialUpdate = false) {
             _subscribers.Add(onChange);
 
             if (triggerInitialUpdate) {
                 onChange?.Invoke(Value);
             }
+
+            return new DisposeCallback(() => Unsubscribe(onChange));
         }
 
         public void Unsubscribe(Action<T> onChange) {
@@ -88,44 +94,47 @@ namespace GeneralUtils {
             _waiters.Clear();
             _subscribers.Clear();
         }
+
+        private class WaitToken : IDisposable {
+            public static readonly WaitToken Empty = new WaitToken();
+
+            private Action _removeWaiter;
+
+            public WaitToken(Action removeWaiter = null) {
+                _removeWaiter = removeWaiter;
+            }
+
+            public void Dispose() {
+                var remove = _removeWaiter;
+                _removeWaiter = null;
+                remove?.Invoke();
+            }
+        }
     }
 
     public interface IUpdatedValue<T> {
         public T Value { get; }
 
-        public void WaitForChange(Action onDone);
-        public void WaitFor(T concreteValue, Action onDone);
-        public void WaitFor(Func<T, bool> predicate, Action onDone);
+        public IDisposable WaitForChange(Action onDone);
+        public IDisposable WaitFor(T concreteValue, Action onDone);
+        public IDisposable WaitFor(Func<T, bool> predicate, Action onDone);
 
-        public void Subscribe(Action<T> onChange, bool triggerInitialUpdate = false);
+        public IDisposable Subscribe(Action<T> onChange, bool triggerInitialUpdate = false);
         public void Unsubscribe(Action<T> onChange);
 
         public void Clear();
     }
 
-    public class UpdatedValueWaiter {
-        private Action _cancel;
-
-        public bool Cancelled { get; set; }
-
-        private UpdatedValueWaiter(Action cancel) {
-            
-        }
-
-        public void Cancel() {
-            _cancel?.Invoke();
-            _cancel = null;
-            Cancelled = true;
-        }
-
-        public static UpdatedValueWaiter WaitForAll<T>(IEnumerable<IUpdatedValue<T>> values, T concreteValue, Action onDone) =>
+    public static class UpdatedValueWaiter {
+        public static IDisposable WaitForAll<T>(IEnumerable<IUpdatedValue<T>> values, T concreteValue, Action onDone) =>
             WaitForAll(values, value => value.Equals(concreteValue), onDone);
 
-        public static UpdatedValueWaiter WaitForAll<T>(IEnumerable<IUpdatedValue<T>> values, Func<T, bool> predicate, Action onDone) {
+        public static IDisposable WaitForAll<T>(IEnumerable<IUpdatedValue<T>> values, Func<T, bool> predicate,
+            Action onDone) {
             var cancelled = false;
             var valueArray = values.ToArray();
             var countLeft = valueArray.Length;
-            
+
             foreach (var value in valueArray) {
                 value.WaitFor(predicate, OnPredicate);
             }
@@ -138,7 +147,7 @@ namespace GeneralUtils {
                 }
             }
 
-            return new UpdatedValueWaiter(() => cancelled = true);
+            return new DisposeCallback(() => cancelled = true);
         }
     }
 }
