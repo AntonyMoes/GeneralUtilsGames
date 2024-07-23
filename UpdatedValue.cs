@@ -31,9 +31,6 @@ namespace GeneralUtils {
 
                 foreach (var pair in activated) {
                     _waiters.Remove(pair);
-                }
-
-                foreach (var pair in activated) {
                     pair.Callback?.Invoke();
                 }
 
