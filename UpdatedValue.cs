@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace GeneralUtils {
     public class UpdatedValue<T> : IUpdatedValue<T> {
-        private readonly Dictionary<Func<T, bool>, Action> _waiters = new Dictionary<Func<T, bool>, Action>();
+        private readonly List<PredicatePair> _waiters = new List<PredicatePair>();
         private readonly List<Action<T>> _subscribers = new List<Action<T>>();
 
         private readonly Func<T, T> _setter;
@@ -22,21 +22,19 @@ namespace GeneralUtils {
 
                 _value = valueToSet;
 
-                var toRemove = new List<Func<T, bool>>();
-                var activated = new List<Action>();
-                foreach (var (predicate, waiter) in _waiters) {
-                    if (predicate(Value)) {
-                        toRemove.Add(predicate);
-                        activated.Add(waiter);
+                var activated = new List<PredicatePair>();
+                foreach (var pair in _waiters) {
+                    if (pair.Predicate(Value)) {
+                        activated.Add(pair);
                     }
                 }
 
-                foreach (var predicate in toRemove) {
-                    _waiters.Remove(predicate);
+                foreach (var pair in activated) {
+                    _waiters.Remove(pair);
                 }
 
-                foreach (var waiter in activated) {
-                    waiter?.Invoke();
+                foreach (var pair in activated) {
+                    pair.Callback?.Invoke();
                 }
 
                 foreach (var subscriber in _subscribers.ToArray()) {
@@ -70,10 +68,11 @@ namespace GeneralUtils {
             if (predicate(Value)) {
                 onDone?.Invoke();
                 return WaitToken.Empty;
-            } else {
-                _waiters.Add(predicate, onDone);
-                return new WaitToken(() => _waiters.Remove(predicate));
             }
+
+            var predicatePair = new PredicatePair(predicate, onDone);
+            _waiters.Add(predicatePair);
+            return new WaitToken(() => _waiters.Remove(predicatePair));
         }
 
         public IDisposable Subscribe(Action<T> onChange, bool triggerInitialUpdate = false) {
@@ -93,6 +92,16 @@ namespace GeneralUtils {
         public void Clear() {
             _waiters.Clear();
             _subscribers.Clear();
+        }
+
+        private class PredicatePair {
+            public readonly Func<T, bool> Predicate;
+            public readonly Action Callback;
+
+            public PredicatePair(Func<T, bool> predicate, Action callback) {
+                Predicate = predicate;
+                Callback = callback;
+            }
         }
 
         private class WaitToken : IDisposable {
