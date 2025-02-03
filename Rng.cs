@@ -20,6 +20,10 @@ namespace GeneralUtils {
             return min + (float) _rnd.NextDouble() * (max - min);
         }
 
+        public bool NextProbabilityCheck(float probability) {
+            return NextFloat(0, 1) >= 1 - probability;
+        }
+
         public T NextChoice<T>(IReadOnlyList<T> collection, out int index) {
             index = NextInt(0, collection.Count);
             return collection[index];
