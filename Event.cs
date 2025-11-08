@@ -110,8 +110,8 @@ namespace GeneralUtils {
     }
 
     public static class EventExtensions {
-        public static void SubscribeOnce(this IEvent @event, Action subscriber) {
-            @event.Subscribe(Once);
+        public static IDisposable SubscribeOnce(this IEvent @event, Action subscriber) {
+            return @event.Subscribe(Once);
 
             void Once() {
                 @event.Unsubscribe(Once);
@@ -119,8 +119,8 @@ namespace GeneralUtils {
             }
         }
 
-        public static void SubscribeOnce<T>(this IEvent<T> @event, Action<T> subscriber) {
-            @event.Subscribe(Once);
+        public static IDisposable SubscribeOnce<T>(this IEvent<T> @event, Action<T> subscriber) {
+            return @event.Subscribe(Once);
 
             void Once(T value) {
                 @event.Unsubscribe(Once);
@@ -128,8 +128,8 @@ namespace GeneralUtils {
             }
         }
 
-        public static void SubscribeOnce<T1, T2>(this IEvent<T1, T2> @event, Action<T1, T2> subscriber) {
-            @event.Subscribe(Once);
+        public static IDisposable SubscribeOnce<T1, T2>(this IEvent<T1, T2> @event, Action<T1, T2> subscriber) {
+            return @event.Subscribe(Once);
 
             void Once(T1 value1, T2 value2) {
                 @event.Unsubscribe(Once);
@@ -137,8 +137,8 @@ namespace GeneralUtils {
             }
         }
 
-        public static void SubscribeOnce<T1, T2, T3>(this IEvent<T1, T2, T3> @event, Action<T1, T2, T3> subscriber) {
-            @event.Subscribe(Once);
+        public static IDisposable SubscribeOnce<T1, T2, T3>(this IEvent<T1, T2, T3> @event, Action<T1, T2, T3> subscriber) {
+            return @event.Subscribe(Once);
 
             void Once(T1 value1, T2 value2, T3 value3) {
                 @event.Unsubscribe(Once);
