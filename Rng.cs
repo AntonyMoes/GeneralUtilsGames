@@ -55,6 +55,10 @@ namespace GeneralUtils {
             throw new ApplicationException();
         }
 
+        public T NextWeightedChoice<T>(IReadOnlyList<T> collection, IReadOnlyList<float> weights) {
+            return NextWeightedChoice(collection, weights, out _);
+        }
+
         public T NextWeightedChoice<T>(IReadOnlyList<(T item, float weight)> collection, out int index) {
             var totalWeight = collection.Sum(t => t.weight);
             var value = NextFloat(0, totalWeight);
@@ -74,6 +78,28 @@ namespace GeneralUtils {
 
         public T NextWeightedChoice<T>(IReadOnlyList<(T item, float weight)> collection) {
             return NextWeightedChoice(collection, out _);
+        }
+
+        public T NextWeightedChoice<T>(IReadOnlyList<T> collection, Func<T, float> weightSelector, out int index) {
+            var totalWeight = collection.Sum(weightSelector);
+            var value = NextFloat(0, totalWeight);
+
+            float sum = 0;
+            index = 0;
+            foreach (var item in collection) {
+                var weight = weightSelector(item);
+                if (value <= sum + weight)
+                    return item;
+
+                sum += weight;
+                index++;
+            }
+
+            throw new ApplicationException();
+        }
+
+        public T NextWeightedChoice<T>(IReadOnlyList<T> collection, Func<T, float> weightSelector) {
+            return NextWeightedChoice(collection, weightSelector, out _);
         }
 
         public List<T> NextShuffle<T>(IEnumerable<T> collection) {
